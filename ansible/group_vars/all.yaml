@@ -1,0 +1,46 @@
+#Syntax for creating vaulted vars : ansible-vault encrypt_string <password_source> '<string_to_encrypt>' --name '<string_name_of_variable>'
+#i.e. : ansible-vault encrypt_string --vault-password-file ~/projects/k8s-prod/ansible/vault/passvault.vault 'XXXXXXXXX' --name 'vault_var_to_encrypt'
+
+#All encrypted passwords are prefixed with 'vault_'
+
+global:
+  vault_ansibledsi: !vault |
+    $ANSIBLE_VAULT;1.1;AES256
+    64633862653238336362353130363131613133386263633335633038666330623032343361656264
+    3735653632303537633637393135376130363933393831390a386635623039333130626232383736
+    64356562343264666534613337356338323138613134616132636361643038386230616464643935
+    6339313130613362310a666237313439386235386164363864646662363637646139343138656363
+    64343265396538373633346363633530616432393938313662313864373238633564
+
+#Registry needed for containerd configuration.  Replace with correct hostname
+registry:
+  port: 5000
+  protocol: http
+  mount_point: /repo
+  hostname: 192.168.200.25
+
+nfs:
+  host: 192.168.200.25
+  path: /nfs/K8s
+  k8s_share_path: share_k8s
+  datalake_share_path: share_datalake
+
+
+firewall_ports:
+  control_plane:
+    - 10250/tcp # Kubelet serve port
+    - 6443/tcp # Api-server port
+    - 2379-2380/tcp # Etcd client API
+    - 80/tcp # Ingress controller
+    - 443/tcp # Ingress controller
+    - 179/tcp # Calico BGP
+    - 4789/udp # Calico VXLAN
+
+kubernetes:
+  version: 1.21.3
+  network_mode: VXLAN #IPIP
+  #Correct ip range ?  192.168.70.0/24
+  pod_network_cidr: 172.17.0.0/16
+  service_cidr: 172.16.0.0/16
+  kubeconfig_folder: /home/AI/ansibledsi/.kube #TODO remove local user reference
+  apiserver_bind_port: 6443

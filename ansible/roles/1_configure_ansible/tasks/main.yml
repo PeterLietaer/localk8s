@@ -1,0 +1,74 @@
+#ansible-playbook site.yml -i hosts.ini --vault-password-file ~/projects/localk8s/ansible/vault/passvault.vault --tags 1_configure_ansible
+
+#start docker repo : docker run -d -p 5000:5000 --name registry registry
+
+- name: Install nfs client
+  ansible.builtin.apt:
+    name:
+      - nfs-common
+    state: present
+
+- name: create mount directory for nfs shares
+  file:
+    path: /var/lib/docker
+    state: directory
+
+- name: Mount the NFS volume
+  ansible.posix.mount:
+    src: "{{ nfs['host'] }}:{{ nfs['path'] }}"
+    path: /var/lib/docker
+    opts: rw,sync,hard,intr
+    state: mounted
+    fstype: nfs
+
+#- name: Install aptitude using apt
+#  apt: name=aptitude state=latest update_cache=yes force_apt_get=yes
+
+- name: Install required system packages
+  apt: name={{ item }} state=latest update_cache=yes
+  loop: [ 'apt-transport-https', 'ca-certificates', 'curl', 'software-properties-common', 'python3-pip', 'virtualenv', 'python3-setuptools']
+
+- name: Add Docker GPG apt Key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Add Docker Repository
+  apt_repository:
+    repo: deb [arch=amd64] https://download.docker.com/{{ ansible_system | lower }}/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable
+    state: present
+
+- name: Install docker and unzip tools
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - unzip
+    state: present
+    update_cache: yes
+
+- name: Install docker pip package (needed for ansible to build images)
+  pip:
+    name: docker==5.0.3
+
+#- name: Create docker config directory
+#  file:
+#    path: /etc/docker
+#    state: directory
+
+#- name: Configure insecure registry
+#  copy:
+#    dest: /etc/docker/daemon.json
+#    content: |
+#      {
+#        "insecure-registries" : ["{{ registry['hostname'] }}:{{ registry['port'] }}"]
+#      }
+
+- name: Restart dockerd
+  become: true
+  service:
+    name: docker
+    enabled: yes
+    state : restarted
+

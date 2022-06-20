@@ -1,0 +1,48 @@
+# ansible-playbook site.yml -i hosts.ini --vault-password-file ~/projects/localk8s/ansible/vault/passvault.vault --tags 2_docker_images
+
+- name: Copy config files for base image
+  copy:
+    src: "{{ item }}"
+    dest : "{{ item }}"
+  with_items:
+    - libirisodbcur6435.so
+    - intersystems-jdbc-3.2.0.jar
+    - instantclient-basiclite-linux.x64-21.4.0.0.0dbru.zip
+    - shared-requirements.txt
+    - jupyter-datascience.dockerfile
+    - odbcinst.ini
+    - k8s-hub.dockerfile
+
+#intersystems-jdbc-3.2.0.jar
+#instantclient-basiclite-linux.x64-21.4.0.0.0dbru.zip
+
+
+- name: Build base image
+  community.docker.docker_image:
+    name: "uzg/{{ item }}"
+    repository: "{{ registry['hostname'] }}:{{ registry['port'] }}/uzg/{{ item }}"
+    tag: 1.0.1
+    push: yes
+    source: build
+    state: present
+    force_source: yes
+    build:
+      dockerfile: "{{ item }}.dockerfile"
+      path: .
+  with_items:
+    - jupyter-datascience
+
+- name: Build base image
+  community.docker.docker_image:
+    name: "uzg/{{ item }}"
+    repository: "{{ registry['hostname'] }}:{{ registry['port'] }}/uzg/{{ item }}"
+    tag: 1.2.4
+    push: yes
+    source: build
+    state: present
+    force_source: yes
+    build:
+      dockerfile: "{{ item }}.dockerfile"
+      path: .
+  with_items:
+    - k8s-hub

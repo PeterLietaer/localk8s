@@ -1,0 +1,112 @@
+#ansible-playbook site.yml -i hosts.ini --vault-password-file ~/projects/localk8s/ansible/vault/passvault.vault --tags 3_kubernetes
+#- name: install helm client
+#  become_user: ansibledsi
+#  shell: |
+#    curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+#  environment:
+#    HELM_INSTALL_DIR: /usr/sbin
+
+- name: install supporting helm repos
+  become_user: ansibledsi
+  shell: |
+    helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
+    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts/
+    helm repo add grafana https://grafana.github.io/helm-charts
+    helm repo add jupyterhub https://jupyterhub.github.io/helm-chart/
+    helm repo add kubernetes-dashboard https://kubernetes.github.io/dashboard/
+    helm repo update
+
+- name: Copy config files
+  become_user: ansibledsi
+  template:
+    src: "{{ item }}"
+    dest : "{{ item }}"
+  with_items:
+    - nfs_provisioner.yaml
+    - prometheus.yaml
+    - grafana.yaml
+    - data_lake_pv.yaml
+    - jupyterhub.yaml
+    - dashboard.yaml
+
+- name: deploy nfs storage class
+  become_user: ansibledsi
+  shell: |
+    helm upgrade \
+    nfs nfs-subdir-external-provisioner/nfs-subdir-external-provisioner \
+    --install \
+    --namespace nfs \
+    --create-namespace \
+    --version=4.0.13 \
+    --atomic \
+    --values nfs_provisioner.yaml
+
+#- name: deploy kubernetes dashboard
+#  ansible.builtin.shell: |
+#    helm upgrade \
+#    kubernetes-dashboard kubernetes-dashboard/kubernetes-dashboard \
+#    --install \
+#    --namespace dashboard \
+#    --create-namespace \
+#    --version=5.0.2 \
+#    --atomic \
+#    --values dashboard.yaml
+
+#- name: path kubernetes dashboard NodePort
+#  become_user: pduartem
+#  ansible.builtin.shell: |
+#    kubectl patch svc kubernetes-dashboard \
+#    -n dashboard \
+#    -p '{"spec": {"ports": [{"name":"http", "nodePort": 30018, "port":443, "protocol": "TCP"}]}}'
+
+- name: deploy nfs storage class
+  become_user: ansibledsi
+#  become_user: pduartem
+  shell: |
+    helm upgrade \
+    nfs nfs-subdir-external-provisioner/nfs-subdir-external-provisioner \
+    --install \
+    --namespace nfs \
+    --create-namespace \
+    --version=4.0.13 \
+    --atomic \
+    --values nfs_provisioner.yaml
+
+#- name: Deploy monitoring stack
+#  tags: monitoring
+#  ansible.builtin.shell: |
+#    helm upgrade \
+#    prometheus prometheus-community/prometheus \
+#    --install \
+#    --namespace monitoring \
+#    --create-namespace \
+#    --version=14.6.0 \
+#    --values prometheus.yaml
+
+- name: Apply data-lake pvc
+  become_user: ansibledsi
+  shell: |
+    kubectl apply -f data_lake_pv.yaml
+
+#- name: Deploy grafana
+#  ansible.builtin.shell: |
+#    helm upgrade \
+#    grafana grafana/grafana \
+#    --install \
+#    --namespace monitoring \
+#    --create-namespace \
+#    --version=6.15.0 \
+#    --atomic \
+#    --values grafana.yaml
+
+- name: Deploy jupyterhub
+  become_user: ansibledsi
+  shell: |
+    helm upgrade \
+    jupyterhub jupyterhub/jupyterhub \
+    --install \
+    --namespace jupyterhub \
+    --create-namespace \
+    --version=1.1.3 \
+    --atomic \
+    --values jupyterhub.yaml

@@ -1,0 +1,17 @@
+# Config file taken from adapting the output of the following command:
+# $helm show values nfs-subdir-external-provisioner/nfs-subdir-external-provisioner
+
+replicaCount: 2
+
+storageClass:
+  name: nfs
+  defaultClass: true
+  provisionerName: nfs-provisioner
+  accessModes: ReadWriteMany
+
+nfs:
+  server: "192.168.200.25"
+  path: "/nfs/K8s/share_k8s"
+
+rbac:
+  create: true

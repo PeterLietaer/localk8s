@@ -1,0 +1,9 @@
+1. officiele ldap authenticator : https://github.com/jupyterhub/ldapauthenticator
+- werkt niet zonder encryptie (doet minimaal starttls)
+- geen ondersteuning voor automatisch aanmaken van users
+
+2. jupyterhub-ldap-authenticator : https://github.com/hansohn/jupyterhub-ldap-authenticator
+create_user :
+users worden niet aangemaakt.
+
+3. benhosmer

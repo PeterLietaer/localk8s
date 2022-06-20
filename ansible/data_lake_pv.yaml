@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jupyterhub
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: data-lake-pv
+spec:
+  storageClassName: ""
+  capacity:
+    storage: 250Gi
+  persistentVolumeReclaimPolicy: Retain
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: "192.168.200.25"
+    path: "/nfs/K8s/share_datalake"
+    readOnly: false
+  claimRef:
+    name: data-lake-pvc
+    namespace: jupyterhub
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: data-lake-pvc
+  namespace: jupyterhub
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  resources:
+    requests:
+      storage: 250Gi
+  volumeName: data-lake-pv

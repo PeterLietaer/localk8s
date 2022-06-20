@@ -1,0 +1,71 @@
+# Config file taken from adapting the output of the following command:
+# $helm show values prometheus-community/prometheus
+
+rbac:
+  create: true
+
+networkPolicy:
+  enabled: false
+
+podSecurityPolicy:
+  enabled: false
+
+alertmanager:
+  enabled: true
+  ingress:
+    enabled: false
+  persistentVolume:
+    enabled: true
+    size: 2Gi
+    storageClass: nfs
+  service:
+   type: NodePort
+   nodePort: 30091
+
+configmapReload:
+  prometheus:
+    enabled: true
+  alertmanager:
+    enabled: true
+
+kubeStateMetrics:
+  enabled: true
+
+nodeExporter:
+  enabled: true
+  service:
+    hostPort: 9100
+
+server:
+  enabled: true
+  global:
+    scrape_interval: 1m
+    scrape_timeout: 10s
+    evaluation_interval: 1m
+  ingress:
+    enabled: false
+  persistentVolume:
+    enabled: true
+    size: 8Gi
+    storageClass: nfs
+  service:
+    type: NodePort
+    nodePort: 30090
+  retention: "15d"
+
+pushgateway:
+  enabled: true
+  service:
+    type: NodePort
+    nodePort: 30092
+  persistentVolume:
+    enabled: true
+    size: 2Gi
+    storageClass: nfs
+
+# alertmanagerFiles:
+#   alertmanager.yml:
+
+# serverFiles:
+#   alerting_rules.yml:
+#   prometheus.yml:

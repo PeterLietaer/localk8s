@@ -1,0 +1,32 @@
+extraArgs:
+  - --enable-skip-login
+  - --enable-insecure-login
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 200Mi
+  limits:
+    cpu: 1
+    memory: 200Mi
+
+protocolHttp: true
+
+service:
+  type: NodePort
+  # Node port defined as 30018 in a patch command
+
+ingress:
+  enabled: false
+
+metricsScraper:
+  enabled: true
+
+metrics-server:
+  enabled: true
+  args:
+    - --kubelet-preferred-address-types=InternalIP
+    - --kubelet-insecure-tls
+
+serviceAccount:
+  create: true

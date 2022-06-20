@@ -1,0 +1,108 @@
+# Config file taken from adapting the output of the following command:
+# $helm show values jupyterhub/jupyterhub
+
+hub:
+  service:
+    type: ClusterIP
+  networkPolicy:
+    enabled: false
+  services:
+    papermill:
+      admin: true
+      #TODO: don't hardcode keys
+      apiToken: "ed90e67d5ae1dfa88c811f32251acd49a7fc1a6f114ac998b9601430335f5ef4"
+  config:
+    JupyterHub:
+      authenticator_class: ldapauthenticator.LDAPAuthenticator
+
+    auth:
+      state:
+        # Required so that state (The LDAP properties) can be stored
+        enabled: True
+        cryptoKey: SECRET
+  image:
+    name: "{{ registry['hostname'] }}:{{ registry['port'] }}/uzg/k8s-hub"
+    tag: 1.2.4
+    pullPolicy: Always
+  extraConfig:
+    myConfig1: |
+      #https://github.com/hansohn/jupyterhub-ldap-authenticator
+      # active directory example
+      c.JupyterHub.authenticator_class = 'ldapauthenticator.LDAPAuthenticatorUID'
+      c.LDAPAuthenticator.server_hosts = ['192.168.200.30']
+      c.LDAPAuthenticator.server_port = 389
+      c.LDAPAuthenticator.server_use_ssl = False
+      c.LDAPAuthenticator.bind_user_dn = 'CN=Administrator,CN=Users,DC=lietaer,DC=click'
+      c.LDAPAuthenticator.bind_user_password = 'ErtErt123+'
+      c.LDAPAuthenticator.user_search_base = 'CN=Users,DC=lietaer,DC=click'
+      c.LDAPAuthenticator.user_search_filter = '(&(objectCategory=person)(objectClass=user)(sAMAccountName={username}))'
+      c.LDAPAuthenticator.user_membership_attribute = 'memberOf'
+      c.LDAPAuthenticator.group_search_base = 'OU=groups,DC=lietaer,DC=click'
+      c.LDAPAuthenticator.group_search_filter = '(&(objectClass=group)(memberOf={group}))'
+      c.LDAPAuthenticator.allowed_groups = ['CN=jupyterhub,OU=groups,DC=lietaer,DC=click']
+      c.LDAPAuthenticator.allow_nested_groups = True
+      #c.LDAPAuthenticator.username_pattern = '[a-zA-Z0-9_.][a-zA-Z0-9_.-]{8,20}[a-zA-Z0-9_.$-]?'
+      c.LDAPAuthenticator.create_user_home_dir = True
+      #c.LDAPAuthenticator.create_user_home_dir_cmd = ['mkhomedir_helper']
+      c.LDAPAuthenticator.create_user_home_dir_cmd = ['adduser']
+      c.Authenticator.delete_invalid_users = True
+      c.Authenticator.admin_users = {'administrator'}
+
+
+    #    myConfig2: |
+    #      pip install dockerspawner
+    #
+    #    myConfig3: |
+    #      c.JupyterHub.spawner_class = 'docker'
+  containerSecurityContext:
+    allowPrivilegeEscalation: true
+
+proxy:
+  service:
+    type: NodePort
+    nodePorts:
+      http: 30314
+  chp:
+    networkPolicy:
+      enabled: false
+
+singleuser:
+  cpu:
+    limit: 1.0
+    guarantee: 0.2
+  storage:
+    dynamic:
+      storageClass: nfs
+    extraVolumes:
+      - name: data-lake
+        persistentVolumeClaim:
+          claimName: data-lake-pvc
+    extraVolumeMounts:
+      - name: data-lake
+        mountPath: /data-lake
+  networkPolicy:
+     enabled: false
+  image:
+    name: "{{ registry['hostname'] }}:{{ registry['port'] }}/uzg/jupyter-datascience"
+    tag: 1.0.1
+    pullPolicy: Always
+  profileList:
+    - display_name: "Data Science"
+      description: "Data Science Environment python/R"
+      default: true
+      kubespawner_override:
+        cmd: ["jupyter-labhub"]
+        image_pull_policy: Always
+  extraEnv: #Force jupyterlab with Git integration
+    #JUPYTERHUB_SINGLEUSER_APP: "jupyter_server.serverapp.ServerApp"
+    #GRANT_SUDO: "yes"
+    CHOWN_HOME: "yes"
+  uid: 0
+  cmd: null # https://github.com/jupyterhub/zero-to-jupyterhub-k8s/issues/562
+
+prePuller:
+  hook:
+    enabled: false
+
+debug:
+  enabled: true

@@ -1,0 +1,7 @@
+jupyterlab==3.2.0
+jupyterlab-git==0.33.0
+papermill==2.3.3
+pyodbc==4.0.32
+tabulate==0.8.9
+cx_Oracle==8.3.0
+python-dotenv==0.19.2

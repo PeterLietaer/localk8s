@@ -1,0 +1,23 @@
+- name: configure ansible server
+  hosts:
+    - localhost
+  roles:
+    - role: 1_configure_ansible
+      tags: 1_configure_ansible
+  debugger: never
+
+- name: docker images
+  hosts:
+    - docker
+  roles:
+    - role: 2_docker_images
+      tags: 2_docker_images
+  debugger: never
+
+- name: install kubernetes packages
+  hosts:
+    - 192.168.200.20
+  roles:
+    - role: 3_kubernetes
+      tags: 3_kubernetes
+  debugger: never

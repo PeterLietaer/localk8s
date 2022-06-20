@@ -1,0 +1,66 @@
+# Config file taken from adapting the output of the following command:
+# $helm show values jupyterhub/jupyterhub
+
+hub:
+  service:
+    type: ClusterIP
+  networkPolicy:
+    enabled: false
+  services:
+    papermill:
+      admin: true
+      #TODO: don't hardcode keys
+      apiToken: "ed90e67d5ae1dfa88c811f32251acd49a7fc1a6f114ac998b9601430335f5ef4"
+  config:
+    JupyterHub:
+      authenticator_class: ldapauthenticator.LDAPAuthenticator
+  extraConfig:
+    myConfig1: |
+        import os
+        print('Uninstalling jupyterhub-ldapauthenticator')
+        os.system('pip uninstall -y jupyterhub-ldapauthenticator')
+        print('Installing jupyterhub-ldap-authenticator')
+        os.system('pip uninstall -y jupyterhub-ldap-authenticator')
+
+proxy:
+  service:
+    type: NodePort
+    nodePorts:
+      http: 30314
+  chp:
+    networkPolicy:
+      enabled: false
+
+singleuser:
+  cpu:
+    limit: 1.0
+    guarantee: 0.2
+  storage:
+    dynamic:
+      storageClass: nfs
+    extraVolumes:
+      - name: data-lake
+        persistentVolumeClaim:
+          claimName: data-lake-pvc
+    extraVolumeMounts:
+      - name: data-lake
+        mountPath: /data-lake
+  networkPolicy:
+     enabled: false
+  image:
+    name: "{{ registry['hostname'] }}:{{ registry['port'] }}/uzg/jupyter-datascience"
+    tag: 2022-02-17
+    pullPolicy: Always
+  profileList:
+    - display_name: "Data Science"
+      description: "Data Science Environment python/R"
+      default: true
+      kubespawner_override:
+        cmd: ["jupyter-labhub"]
+        image_pull_policy: "IfNotPresent"
+  extraEnv: #Force jupyterlab with Git integration
+    JUPYTERHUB_SINGLEUSER_APP: "jupyter_server.serverapp.ServerApp"
+
+prePuller:
+  hook:
+    enabled: false
